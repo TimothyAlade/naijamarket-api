@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8"/>
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0"/>
+
+<title>Login</title>
+
+<link rel="stylesheet" href="style.css"/>
+
+</head>
+
+<body>
+
+<div class="app-box">
+
+<h1>Welcome Back</h1>
+
+<p class="subtitle">
+Login to continue
+</p>
+
+<input
+type="email"
+id="email"
+placeholder="Email Address"
+/>
+
+<input
+type="password"
+id="password"
+placeholder="Password"
+/>
+
+<button
+onclick="login()"
+class="main-btn">
+
+Login
+
+</button>
+
+<button
+onclick="googleLogin()"
+class="upgrade-btn">
+
+Continue With Google
+
+</button>
+
+<p style="margin-top:20px;text-align:center;">
+
+No account?
+
+<a href="signup.html"
+style="color:#22c55e;">
+
+Create One
+
+</a>
+
+</p>
+
+</div>
+
+<script type="module" src="auth.js"></script>
+
+</body>
+</html>
