@@ -8,8 +8,35 @@ export async function handler(event){
     const text =
     body.text;
 
-    const instruction =
-    body.instruction;
+    const prompt = `
+
+You are VoxFix AI Conversation Analyzer.
+
+Analyze this conversation deeply.
+
+Detect:
+
+1. Emotional tone
+2. Interest level
+3. Confidence level
+4. Social dynamics
+5. Business seriousness
+6. Manipulation or desperation
+7. Best communication strategy
+
+Return JSON ONLY:
+
+{
+  "mood":"",
+  "situation":"",
+  "strategy":"",
+  "reply":""
+}
+
+Conversation:
+${text}
+
+`;
 
     const response =
     await fetch(
@@ -36,17 +63,12 @@ export async function handler(event){
 
             {
               role:"system",
-              content:instruction
-            },
-
-            {
-              role:"user",
-              content:text
+              content:prompt
             }
 
           ],
 
-          temperature:0.8
+          temperature:0.7
 
         })
 
@@ -67,18 +89,7 @@ export async function handler(event){
 
       statusCode:200,
 
-      body:JSON.stringify({
-
-        result:
-        parsed.rewrite || "",
-
-        intent:
-        parsed.intent || "",
-
-        replies:
-        parsed.replies || []
-
-      })
+      body:JSON.stringify(parsed)
 
     };
 

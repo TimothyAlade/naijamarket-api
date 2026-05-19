@@ -25,12 +25,17 @@ export async function handler(event){
 
           email:body.email,
 
-          amount:body.amount,
+          amount:
+          body.amount * 100,
 
           currency:"USD",
 
           callback_url:
-          body.callback_url
+          `${body.callback_url}?uid=${body.uid}`,
+
+          metadata:{
+            uid:body.uid
+          }
 
         })
 
