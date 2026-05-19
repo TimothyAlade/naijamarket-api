@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8"/>
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0"/>
+
+<title>Sign In</title>
+
+<link rel="stylesheet"
+href="style.css"/>
+
+</head>
+
+<body>
+
+<div class="app-box">
+
+<h1>
+Welcome Back
+</h1>
+
+<p class="subtitle">
+
+Save your rewrites,
+premium access,
+and history.
+
+</p>
+
+<input
+type="email"
+id="email"
+placeholder="Email"
+class="auth-input"
+/>
+
+<input
+type="password"
+id="password"
+placeholder="Password"
+class="auth-input"
+/>
+
+<button
+onclick="signup()"
+class="main-btn">
+
+Create Account
+
+</button>
+
+<button
+onclick="login()"
+class="upgrade-btn">
+
+Login
+
+</button>
+
+</div>
+
+<script type="module">
+
+import {
+  auth
+}
+from "./firebase.js";
+
+import {
+
+  createUserWithEmailAndPassword,
+
+  signInWithEmailAndPassword
+
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+async function signup(){
+
+  const email =
+  document.getElementById("email").value;
+
+  const password =
+  document.getElementById("password").value;
+
+  try{
+
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    alert("Account created");
+
+    window.location.href =
+    "index.html";
+
+  }catch(error){
+
+    alert(error.message);
+
+  }
+
+}
+
+async function login(){
+
+  const email =
+  document.getElementById("email").value;
+
+  const password =
+  document.getElementById("password").value;
+
+  try{
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    alert("Login success");
+
+    window.location.href =
+    "index.html";
+
+  }catch(error){
+
+    alert(error.message);
+
+  }
+
+}
+
+window.signup =
+signup;
+
+window.login =
+login;
+
+</script>
+
+</body>
+</html>

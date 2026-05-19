@@ -5,23 +5,32 @@ import {
 from "./firebase.js";
 
 import {
+  buildPrompt
+}
+from "./aiModes.js";
+
+import {
+  transcribeAudio
+}
+from "./transcribeAudio.js";
+
+import {
   onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
+
   doc,
   getDoc,
   updateDoc,
   increment,
   arrayUnion
+
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let currentUser = null;
-
-const PAYSTACK_PUBLIC_KEY =
-"pk_live_9aa6ef8ab901b849ee1723345ff12bbef8162359";
 
 const usesCount =
 document.getElementById("usesCount");
@@ -32,11 +41,19 @@ document.getElementById("loading");
 const historyBox =
 document.getElementById("history");
 
+const result =
+document.getElementById("result");
+
+const fixBtn =
+document.getElementById("fixBtn");
+
 onAuthStateChanged(auth, async(user)=>{
 
   if(user){
 
     currentUser = user;
+
+    fixBtn.disabled = false;
 
     const userRef =
     doc(db,"users",user.uid);
@@ -44,13 +61,19 @@ onAuthStateChanged(auth, async(user)=>{
     const snap =
     await getDoc(userRef);
 
-    const data =
-    snap.data();
+    if(snap.exists()){
 
-    usesCount.innerText =
-    data.freeUses;
+      const data =
+      snap.data();
 
-    loadHistory(data.history || []);
+      usesCount.innerText =
+      data.freeUses || 3;
+
+      loadHistory(
+        data.history || []
+      );
+
+    }
 
   }
 
@@ -63,17 +86,46 @@ function loadHistory(history){
   history.reverse().forEach(item=>{
 
     historyBox.innerHTML += `
-      <div class="history-item">
 
-        <div class="history-tone">
-          ${item.tone}
-        </div>
+    <div class="history-item">
 
-        <div>
-          ${item.result}
-        </div>
-
+      <div class="history-tone">
+        ${item.detectedIntent}
       </div>
+
+      <div>
+        ${item.result}
+      </div>
+
+    </div>
+
+    `;
+
+  });
+
+}
+
+function renderReplies(replies){
+
+  const grid =
+  document.getElementById("replyGrid");
+
+  grid.innerHTML = "";
+
+  replies.forEach(reply=>{
+
+    grid.innerHTML += `
+
+    <div
+    class="reply-card"
+    onclick="copyReply(
+      \`${reply}\`
+    )">
+
+      ${reply}
+
+    </div>
+
     `;
 
   });
@@ -105,74 +157,19 @@ async function fileToBase64(file){
 
 }
 
-function getModeInstruction(tone){
-
-  const modes = {
-
-    "Professional":
-    "Rewrite professionally and clearly.",
-
-    "Respectful":
-    "Make the message respectful and polite.",
-
-    "Client Reply":
-    "Rewrite like a smart client response.",
-
-    "Pidgin to English":
-    "Convert pidgin English into fluent English.",
-
-    "Fix Grammar":
-    "Fix grammar mistakes naturally.",
-
-    "Short & Clear":
-    "Shorten the message while keeping meaning.",
-
-    "Sound Smarter":
-    "Rewrite intelligently and confidently.",
-
-    "Romantic":
-    "Rewrite warmly and emotionally.",
-
-    "CEO Style":
-    "Rewrite like a confident CEO speaking professionally.",
-
-    "Luxury English":
-    "Rewrite elegantly with premium sounding English.",
-
-    "Elite Business":
-    "Rewrite like high level business communication.",
-
-    "High Value Texting":
-    "Rewrite confidently, attractively, and socially intelligent.",
-
-    "Premium Client Pitch":
-    "Rewrite like a persuasive premium business pitch."
-
-  };
-
-  return modes[tone] ||
-  "Rewrite professionally.";
-
-}
-
 async function fixMessage(){
 
   const text =
   document.getElementById("inputText").value;
 
-  const tone =
-  document.getElementById("tone").value;
-
   const voiceFile =
   document.getElementById("voiceFile")
   .files[0];
 
-  const result =
-  document.getElementById("result");
-
   if(!currentUser){
 
-    alert("Refresh page.");
+    result.innerHTML =
+    "Connecting to VoxFix AI...";
 
     return;
 
@@ -180,60 +177,8 @@ async function fixMessage(){
 
   if(!text && !voiceFile){
 
-    alert(
-      "Enter text or upload voice note."
-    );
-
-    return;
-
-  }
-
-  const userRef =
-  doc(db,"users",currentUser.uid);
-
-  const snap =
-  await getDoc(userRef);
-
-  const data =
-  snap.data();
-
-  const premiumTones = [
-
-    "CEO Style",
-
-    "Luxury English",
-
-    "Elite Business",
-
-    "High Value Texting",
-
-    "Premium Client Pitch"
-
-  ];
-
-  const isPremium =
-  data?.premium || false;
-
-  if(
-    premiumTones.includes(tone)
-    &&
-    !isPremium
-  ){
-
-    result.innerHTML = `
-      🔒 Premium tone locked.
-      <br><br>
-      Upgrade to unlock smarter AI modes.
-    `;
-
-    return;
-
-  }
-
-  if(data.freeUses <= 0){
-
     result.innerHTML =
-    "Free daily limit reached.";
+    "Enter a message or upload a voice note.";
 
     return;
 
@@ -246,22 +191,35 @@ async function fixMessage(){
 
   try{
 
-    let audioBase64 = null;
+    let finalText = text;
 
     if(voiceFile){
 
-      audioBase64 =
-      await fileToBase64(voiceFile);
+      const audioBase64 =
+      await fileToBase64(
+        voiceFile
+      );
+
+      result.innerHTML =
+      "Transcribing voice note...";
+
+      const transcript =
+      await transcribeAudio(
+        audioBase64
+      );
+
+      finalText = transcript;
 
     }
 
-    const modeInstruction =
-    getModeInstruction(tone);
+    const instruction =
+    buildPrompt(finalText);
 
     const response =
     await fetch(
       "/.netlify/functions/fix",
       {
+
         method:"POST",
 
         headers:{
@@ -270,10 +228,11 @@ async function fixMessage(){
         },
 
         body:JSON.stringify({
-          text,
-          tone,
-          audio:audioBase64,
-          instruction:modeInstruction
+
+          text:finalText,
+
+          instruction
+
         })
 
       }
@@ -282,48 +241,28 @@ async function fixMessage(){
     const ai =
     await response.json();
 
-    const detectedLanguage =
-    ai.detectedLanguage || "Unknown";
+    renderReplies(
+      ai.replies || []
+    );
 
-    typeWriter(ai.result);
+    result.innerHTML = `
 
-    function typeWriter(text){
+    <div style="
+    color:#22c55e;
+    margin-bottom:15px;
+    font-weight:bold;
+    ">
 
-      result.innerHTML = `
-      <strong>${tone}</strong>
-      <br>
-      <small>
-      Detected Language:
-      ${detectedLanguage}
-      </small>
-      <br><br>
-      `;
+    ${ai.intent}
 
-      let i = 0;
+    </div>
 
-      const speed = 15;
+    ${ai.result}
 
-      function typing(){
+    `;
 
-        if(i < text.length){
-
-          result.innerHTML +=
-          text.charAt(i);
-
-          i++;
-
-          setTimeout(
-            typing,
-            speed
-          );
-
-        }
-
-      }
-
-      typing();
-
-    }
+    const userRef =
+    doc(db,"users",currentUser.uid);
 
     await updateDoc(userRef,{
 
@@ -333,13 +272,11 @@ async function fixMessage(){
       history:
       arrayUnion({
 
-        tone,
+        detectedIntent:
+        ai.intent,
 
         result:
         ai.result,
-
-        language:
-        detectedLanguage,
 
         createdAt:
         Date.now()
@@ -348,25 +285,114 @@ async function fixMessage(){
 
     });
 
+    const latest =
+    await getDoc(userRef);
+
     usesCount.innerText =
-    data.freeUses - 1;
-
-    loadHistory([
-      ...(data.history || []),
-
-      {
-        tone,
-        result: ai.result
-      }
-
-    ]);
+    latest.data().freeUses;
 
   }catch(error){
 
+    console.log(error);
+
     result.innerHTML =
-    "Something went wrong.";
+    "AI request failed.";
+
+  }
+
+  loading.style.display =
+  "none";
+
+}
+
+async function analyzeConversation(){
+
+  const text =
+  document.getElementById("inputText").value;
+
+  if(!text){
+
+    result.innerHTML =
+    "Paste a conversation first.";
+
+    return;
+
+  }
+
+  loading.style.display =
+  "block";
+
+  result.innerHTML =
+  "Analyzing conversation...";
+
+  try{
+
+    const response =
+    await fetch(
+      "/.netlify/functions/analyze",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+          "application/json"
+        },
+
+        body:JSON.stringify({
+
+          text
+
+        })
+
+      }
+    );
+
+    const data =
+    await response.json();
+
+    result.innerHTML = `
+
+    <div style="
+    line-height:2;
+    ">
+
+    <h3>
+    Conversation Analysis
+    </h3>
+
+    <b>Detected Mood:</b>
+    <br>
+    ${data.mood}
+
+    <br><br>
+
+    <b>Situation:</b>
+    <br>
+    ${data.situation}
+
+    <br><br>
+
+    <b>Best Strategy:</b>
+    <br>
+    ${data.strategy}
+
+    <br><br>
+
+    <b>Suggested Reply:</b>
+    <br>
+    ${data.reply}
+
+    </div>
+
+    `;
+
+  }catch(error){
 
     console.log(error);
+
+    result.innerHTML =
+    "Analysis failed.";
 
   }
 
@@ -378,17 +404,28 @@ async function fixMessage(){
 window.fixMessage =
 fixMessage;
 
+window.analyzeConversation =
+analyzeConversation;
+
 window.copyResult =
 function(){
 
-  const text =
-  document.getElementById("result")
-  .innerText;
+  navigator.clipboard
+  .writeText(
+    result.innerText
+  );
+
+  alert("Copied");
+
+}
+
+window.copyReply =
+function(text){
 
   navigator.clipboard
   .writeText(text);
 
-  alert("Copied");
+  alert("Reply copied");
 
 }
 
@@ -396,8 +433,7 @@ window.shareWhatsApp =
 function(){
 
   const text =
-  document.getElementById("result")
-  .innerText;
+  result.innerText;
 
   const url =
   `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -411,5 +447,13 @@ function(){
 
   window.location.href =
   "pricing.html";
+
+}
+
+window.openAuth =
+function(){
+
+  window.location.href =
+  "auth.html";
 
 }

@@ -123,27 +123,93 @@ Get Lifetime
 
 </div>
 
-<script>
+<script type="module">
 
-function payWeekly(){
+import {
+  auth
+}
+from "./firebase.js";
 
-  alert("Paystack integration next");
+import {
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+let currentUser = null;
+
+onAuthStateChanged(auth,(user)=>{
+
+  if(user){
+
+    currentUser = user;
+
+  }
+
+});
+
+async function startPayment(amount){
+
+  if(!currentUser){
+
+    alert("Loading user...");
+    return;
+
+  }
+
+  const response =
+  await fetch(
+    "/.netlify/functions/pay",
+    {
+      method:"POST",
+
+      headers:{
+        "Content-Type":
+        "application/json"
+      },
+
+      body:JSON.stringify({
+
+        email:
+        `${currentUser.uid}@voxfix.ai`,
+
+        amount,
+
+        callback_url:
+        `${window.location.origin}/.netlify/functions/verify`,
+
+        uid:
+        currentUser.uid
+
+      })
+
+    }
+  );
+
+  const data =
+  await response.json();
+
+  if(data.data.authorization_url){
+
+    window.location.href =
+    data.data.authorization_url;
+
+  }else{
+
+    alert("Payment failed.");
+
+  }
 
 }
 
-function payMonthly(){
+window.payWeekly =
+()=>startPayment(299);
 
-  alert("Paystack integration next");
+window.payMonthly =
+()=>startPayment(799);
 
-}
-
-function payLifetime(){
-
-  alert("Paystack integration next");
-
-}
+window.payLifetime =
+()=>startPayment(4900);
 
 </script>
-
 </body>
 </html>

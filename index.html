@@ -1,21 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VoxFix AI</title>
-  <link rel="stylesheet" href="style.css"/>
+
+<meta charset="UTF-8"/>
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0"/>
+
+<title>VoxFix AI</title>
+
+<link rel="stylesheet"
+href="style.css"/>
+
 </head>
+
 <body>
 
-<div class="hero">
-  <h1>VoxFix AI</h1>
-  <p>Turn rough voice notes into polished messages instantly.</p>
+<div class="app-box">
 
-  <a href="app.html">
-    <button>Start Free</button>
-  </a>
+<div class="top-bar">
+
+<button
+onclick="openAuth()"
+class="auth-btn">
+
+Sign In
+
+</button>
+
 </div>
+
+<h1>
+
+VoxFix AI
+
+<span class="pro-badge">
+PRO
+</span>
+
+</h1>
+
+<p class="subtitle">
+
+AI powered communication upgrade.
+
+</p>
+
+<div id="premiumBanner">
+
+🔥 Premium unlocks:
+<br><br>
+
+• Unlimited rewrites
+<br>
+
+• Smart AI replies
+<br>
+
+• Voice note intelligence
+<br>
+
+• Conversation analyzer
+<br>
+
+• Luxury business messaging
+<br>
+
+• Advanced multilingual rewriting
+
+</div>
+
+<div id="usesBox">
+
+Free Uses Left:
+<span id="usesCount">
+3
+</span>
+
+</div>
+
+<textarea
+id="inputText"
+placeholder="Paste your rough message or full conversation here..."></textarea>
+
+<button
+onclick="analyzeConversation()"
+class="analyze-btn">
+
+Analyze Conversation
+
+</button>
+<select id="personaMode">
+
+<option value="ceo">
+CEO Mode
+</option>
+
+<option value="luxury">
+Luxury Mode
+</option>
+
+<option value="charming">
+Charming Mode
+</option>
+
+<option value="sales">
+Sales Closer
+</option>
+
+<option value="alpha">
+Alpha Mode
+</option>
+
+</select>
+<input
+type="file"
+id="voiceFile"
+accept=".mp3,.wav,.m4a"/>
+
+<button
+onclick="fixMessage()"
+class="main-btn"
+id="fixBtn"
+disabled>
+
+Upgrade My Message
+
+</button>
+
+<button
+onclick="upgradeNow()"
+class="upgrade-btn">
+
+Upgrade To Premium
+
+</button>
+
+<div id="loading">
+
+VoxFix AI is thinking...
+
+</div>
+
+<div id="result"></div>
+
+<div id="smartReplies">
+
+<h3>
+
+Smart Reply Suggestions
+
+</h3>
+
+<div id="replyGrid"></div>
+
+</div>
+
+<div class="actions">
+
+<button onclick="copyResult()">
+
+Copy Result
+
+</button>
+
+<button onclick="shareWhatsApp()">
+
+Share WhatsApp
+
+</button>
+
+</div>
+
+<h2 class="history-title">
+
+History
+
+</h2>
+
+<div id="history"></div>
+
+</div>
+
+<script
+type="module"
+src="app.js"></script>
 
 </body>
 </html>

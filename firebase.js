@@ -2,19 +2,28 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  getAuth
+
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged
+
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-  getFirestore
+
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 
   apiKey:
-  "YOUR_API_KEY",
+  "AIzaSyC_JYCC1knmCa4Q8GTbKQxLSJ_Mn16oZmU",
 
   authDomain:
   "voxfixai.firebaseapp.com",
@@ -36,8 +45,80 @@ const firebaseConfig = {
 const app =
 initializeApp(firebaseConfig);
 
-export const auth =
+const auth =
 getAuth(app);
 
-export const db =
+const db =
 getFirestore(app);
+
+async function createUser(user){
+
+  const userRef =
+  doc(db,"users",user.uid);
+
+  const snap =
+  await getDoc(userRef);
+
+  if(!snap.exists()){
+
+    await setDoc(userRef,{
+
+      uid:user.uid,
+
+      premium:false,
+
+      freeUses:3,
+
+      lastReset:
+      Date.now(),
+
+      createdAt:
+      Date.now(),
+
+      history:[]
+
+    });
+
+  }
+
+}
+
+signInAnonymously(auth)
+.then(()=>{
+
+  console.log(
+    "Anonymous login success"
+  );
+
+})
+.catch((error)=>{
+
+  console.log(
+    "Anonymous auth error:",
+    error
+  );
+
+});
+
+onAuthStateChanged(
+  auth,
+  async(user)=>{
+
+    if(user){
+
+      console.log(
+        "User authenticated:",
+        user.uid
+      );
+
+      await createUser(user);
+
+    }
+
+  }
+);
+
+export {
+  auth,
+  db
+};
